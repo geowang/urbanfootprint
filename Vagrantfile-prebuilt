@@ -1,0 +1,63 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+CALTHORPE_UID = 209
+CALTHORPE_GID = 209
+VAGRANT_COMMAND = ARGV[0]
+
+# Allow user to override amount of memory allocated
+# to VM via environment variable.
+VM_MEMORY = ENV['UF_VM_MEMORY']  || 4096
+VM_CPUS   = ENV['UF_VM_CPUS']    || 2
+VM_PROXY  = ENV['VAGRANT_PROXY'] || false
+
+VM_BOX_NAME = "urbanfootprint-prebuilt-2016-09-04"
+
+Vagrant.configure(2) do |config|
+  ############################################################################
+  # GLOBAL SETTINGS
+  ############################################################################
+  config.vm.box     = VM_BOX_NAME
+  config.vm.box_url = "https://s3-us-west-2.amazonaws.com/uf-provisioning/urbanfootprint-2016-09-04.box"
+
+  config.vm.network "forwarded_port", guest: 80, host: 3333
+  config.vm.network "forwarded_port", guest: 5432, host: 5555
+
+  if VAGRANT_COMMAND == "ssh"
+    config.ssh.username = "calthorpe"
+  end
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = VM_MEMORY
+    vb.cpus   = VM_CPUS
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--ioapic", "on"]
+  end
+  ############################################################################
+
+  ############################################################################
+  # VIRTUALBOX
+  ############################################################################
+  config.vm.define VM_BOX_NAME do |subvm|
+    subvm.vm.hostname = "urbanfootprint"
+
+    # Copy the vagrant user's list of authorized_keys to the calthorpe
+    # user so  we can easily ssh in as calthorpe user.
+    config.vm.provision "shell", inline:
+      "mkdir -p /home/calthorpe/.ssh && \
+       cp /home/vagrant/.ssh/authorized_keys /home/calthorpe/.ssh/authorized_keys && \
+       chown #{CALTHORPE_UID}:#{CALTHORPE_GID} /home/calthorpe/.ssh/authorized_keys"
+  end
+  ############################################################################
+
+  ############################################################################
+  # PROXY SETTINGS
+  ############################################################################
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    config.proxy.http     = VM_PROXY
+    config.proxy.https    = VM_PROXY
+    config.proxy.no_proxy = VM_PROXY && "localhost,127.0.0.1,.example.com"
+  end
+  ############################################################################
+
+end

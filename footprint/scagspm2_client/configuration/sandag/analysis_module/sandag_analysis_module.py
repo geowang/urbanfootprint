@@ -1,0 +1,123 @@
+from footprint.client.configuration.fixture import AnalysisModuleFixture
+from footprint.main.models.config.project import Project
+from footprint.main.models.analysis_module.analysis_module import AnalysisModuleConfiguration, AnalysisModuleKey
+from footprint.main.models.analysis_module.analysis_tool import AnalysisToolKey
+from footprint.main.models.config.scenario import FutureScenario, Scenario
+from footprint.main.models.geospatial.behavior import BehaviorKey, Behavior
+from footprint.main.utils.fixture_list import FixtureList
+
+__author__ = 'calthorpe'
+
+class SandagAnalysisModuleFixture(AnalysisModuleFixture):
+
+    def default_analysis_module_configurations(self, **kwargs):
+        config_entity = self.config_entity
+        uf_analysis_module = lambda module: 'footprint.main.models.analysis_module.%s' % module
+
+        behavior_key = BehaviorKey.Fab.ricate
+        get_behavior = lambda key: Behavior.objects.get(key=behavior_key(key))
+
+    def default_analysis_module_configurations(self, **kwargs):
+        config_entity = self.config_entity
+        uf_analysis_module = lambda module: 'footprint.main.models.analysis_module.%s' % module
+
+        behavior_key = BehaviorKey.Fab.ricate
+        get_behavior = lambda key: Behavior.objects.get(key=behavior_key(key))
+
+        return map(
+            lambda configuration:
+                AnalysisModuleConfiguration.analysis_module_configuration(config_entity, **configuration),
+            FixtureList([
+                dict(
+                    class_scope=Project,
+                    key=AnalysisModuleKey.ENVIRONMENTAL_CONSTRAINT,
+                    name='Environmental Constraints',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('environmental_constraint_module.environmental_constraint_union_tool.EnvironmentalConstraintUnionTool'),
+                            key=AnalysisToolKey.ENVIRONMENTAL_CONSTRAINT_UNION_TOOL,
+                            behavior=get_behavior('environmental_constraint')
+                        )
+                    ]
+                ),
+                dict(
+                    class_scope=FutureScenario,
+                    key=AnalysisModuleKey.SCENARIO_BUILDER,
+                    name='Scenario Builder',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('core_module.scenario_updater_tool.ScenarioUpdaterTool'),
+                            key=AnalysisToolKey.SCENARIO_UPDATER_TOOL
+                        )
+                    ],
+                    task_name=uf_analysis_module('core_module.core.execute_core'),
+                    ),
+                dict(
+                    class_scope=FutureScenario,
+                    key=AnalysisModuleKey.ENVIRONMENTAL_CONSTRAINT,
+                    name='Environmental Constraints',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('environmental_constraint_module.environmental_constraint_updater_tool.EnvironmentalConstraintUpdaterTool'),
+                            key=AnalysisToolKey.ENVIRONMENTAL_CONSTRAINT_UPDATER_TOOL,
+                            behavior=get_behavior('environmental_constraint'),
+                            )
+                    ],
+                    ),
+                dict(
+                    class_scope=Scenario,
+                    key=AnalysisModuleKey.ENERGY,
+                    name='Energy Module',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('energy_module.energy_updater_tool.EnergyUpdaterTool'),
+                            key=AnalysisToolKey.ENERGY_UPDATER_TOOL
+                        )
+                    ],
+                    ),
+                dict(
+                    class_scope=Scenario,
+                    key=AnalysisModuleKey.WATER,
+                    name='Water Module',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('water_module.water_updater_tool.WaterUpdaterTool'),
+                            key=AnalysisToolKey.WATER_UPDATER_TOOL
+                        )
+                    ]
+                ),
+                dict(
+                    class_scope=Scenario,
+                    key=AnalysisModuleKey.VMT,
+                    name='Vehicle Miles Traveled',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('vmt_module.vmt_updater_tool.VmtUpdaterTool'),
+                            key=AnalysisToolKey.VMT_UPDATER_TOOL
+                        )
+                    ]
+                ),
+                dict(
+                    class_scope=FutureScenario,
+                    key=AnalysisModuleKey.FISCAL,
+                    name='Fiscal Module',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('fiscal_module.fiscal_updater_tool.FiscalUpdaterTool'),
+                            key=AnalysisToolKey.FISCAL_UPDATER_TOOL
+                        )
+                    ]
+                ),
+                dict(
+                    class_scope=FutureScenario,
+                    key=AnalysisModuleKey.AGRICULTURE,
+                    name='Agriculture',
+                    analysis_tools=[
+                        dict(
+                            class_name=uf_analysis_module('agriculture_module.agriculture_updater_tool.AgricultureUpdaterTool'),
+                            key=AnalysisToolKey.AGRICULTURE_UPDATER_TOOL
+                        )
+                    ]
+                ),
+                ]).matching_scope(class_scope=self.config_entity and self.config_entity.__class__)
+        )
